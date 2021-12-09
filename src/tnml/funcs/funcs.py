@@ -7,6 +7,21 @@ import math
 def npzFileExist(seed, port):
     return False
 
+def identityError(a):
+    """
+    Calculate the distance of matrix a to a 2D eye matrix
+
+    Parameters
+    ----------
+    a : 2-D ndarray.
+    
+    Returns
+    -------
+    float
+        The norm of matrix (a - I).
+    """
+    return np.linalg.norm(a - np.eye(a.shape[0], a.shape[1]))
+
 def sizeOfShape(shape):
     res = 1
     for x in shape:
@@ -722,3 +737,9 @@ def getOneHot(targets, classes):
 
 def singleFeatureMapToVector(x):
     return np.array([np.cos(x * 0.5 * np.pi), np.sin(x * 0.5 * np.pi)])
+
+def transpose(x):
+    if len(x.shape) == 1:
+        return x
+    else:
+        return x.T

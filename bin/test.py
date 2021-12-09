@@ -15,20 +15,34 @@ zzFlag = True
 if __name__ == '__main__':
     CTL.setXP(np)
 
+    h = 28
+    w = 28
+    px = 4
+    py = 4
+
+    n = (h // px) * (w // py)
+
     # timeBeforeLoad = time.time()
-    dataset = mnist.load(compressed = True, px = 2, py = 2, zzFlag = zzFlag)
+    dataset = mnist.load(compressed = True, px = px, py = py, zzFlag = zzFlag)
     # print(dict(dataset))
-    print(dataset)
+    # print(dataset)
 
     # model = model.MPSModel(h = 14, w = 14)
-    mpsOptions = model.MPSModelOptions(n = 14 * 14, m = 2, classes = 10)
+    mpsOptions = model.MPSModelOptions(n = n, m = 20, classes = 10, eta0 = 0.01, eta = 0.01)
     mpsModel = model.MPSModel(mpsOptions)
 
+    trainN = 300
+    validN = 100
+    trainX, trainY = dataset['trainX'][:trainN], dataset['trainY'][:trainN]
+    validX, validY = dataset['testX'][:validN], dataset['testY'][:validN]
+    mpsModel.train(trainX, trainY, validX, validY, epochs = 10)
+
     evalBeginTime = time.time()
-    evalN = 500
+    evalN = 5000
     mpsModel.eval(dataset['testX'][:evalN], dataset['testY'][:evalN])
     evalEndTime = time.time()
     print('eval time of {} data is {} seconds'.format(evalN, evalEndTime - evalBeginTime))
+
 
     # compressedImg = imgfuncs.compress(pooledImg, px = 2, py = 2)
     if not zzFlag:
@@ -37,6 +51,10 @@ if __name__ == '__main__':
         plt.show()
     else:
         print('input shape = {}'.format(dataset['trainX'][0].shape))
+        plt.plot(mpsModel.trainingLoss, 'o', label = 'training')
+        plt.plot(mpsModel.validationLoss, 'o', label = 'validation')
+        plt.legend()
+        plt.show()
     # print(imgfuncs.compress(pooledImg, px = 2, py = 2))
     # timeAfterLoad = time.time()
 
