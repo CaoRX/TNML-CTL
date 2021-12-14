@@ -1,13 +1,13 @@
-import CTL.examples.MPS as mps
 import numpy as np
 import tnml.funcs.funcs as funcs
+from CTL.tensor.tensor import Tensor
 from CTL.tensor.contract.contract import contractTwoTensors
 import time
 import functools
 
 from CTL.examples.Schimdt import SchimdtDecomposition, matrixSchimdtDecomposition
-from CTL.tensor.tensor import Tensor
 from CTL.tensor.contract.link import makeLink
+import CTL.examples.MPS as mps
 
 class MPSModelOptions:
 
@@ -33,17 +33,25 @@ class NumpyMPS:
         del self.mps
         self.predictIndex = predictIndex
         self.activeIndex = None
+        self.canonicalize(normalizeFlag = True, index = self.predictIndex)
         # self.eta = eta
 
-    def canonicalize(self, index):
+    def normalize(self, index):
+        self.tensors[index] /= np.linalg.norm(self.tensors[index])
+
+    def canonicalize(self, index, normalizeFlag = False):
         if (self.activeIndex == index):
             return 
         # canonicalize from 
         for i in range(index):
             # self.tensors[i], self.tensors[i + 1] = 
             self.moveActive(i, i + 1)
+            if (normalizeFlag):
+                self.normalize(i + 1)
         for i in range(self.n - 1, index, -1):
             self.moveActive(i, i - 1)
+            if (normalizeFlag):
+                self.normalize(i - 1)
 
         self.activeIndex = index
 
@@ -99,6 +107,7 @@ class NumpyMPS:
             makeLink('r', 'l', left, right)
 
             u, s, v = SchimdtDecomposition(right, left, self.chi)
+            # print('s = {}'.format(s))
             sv = contractTwoTensors(s, v)
             self.tensors[i] = u.toTensor(labels = rightLabels)
             self.tensors[j] = sv.toTensor(labels = leftLabels)
@@ -121,6 +130,7 @@ class NumpyMPS:
 
             makeLink('r', 'l', left, right)
             u, s, v = SchimdtDecomposition(left, right, self.chi)
+            # print('s = {}'.format(s))
             sv = contractTwoTensors(s, v)
             self.tensors[i] = u.toTensor(labels = leftLabels)
             self.tensors[j] = sv.toTensor(labels = rightLabels)
@@ -272,13 +282,17 @@ class NumpyMPS:
         # print(self.tensors[ii - 1].shape, self.tensors[ii].shape, self.tensors[ii + 1].shape)
 
     def update(self, trainX, trainY, eta, debugFlag = False):
+        # print('shape before canonicalize: {}, {}'.format(self.tensors[0].shape, self.tensors[1].shape))
         self.canonicalize(self.predictIndex)
+        # print('shape begin: {}, {}'.format(self.tensors[0].shape, self.tensors[1].shape))
         while (self.predictIndex > 0):
             self.swapTensors(self.predictIndex - 1)
             self.moveActive(self.predictIndex + 1, self.predictIndex)
         for i in range(1, self.n - 1):
             # update tensors[i], tensors[i + 1]
+            # print(self.tensors[0].shape, self.tensors[1].shape)
             self.swapTensors(i - 1)
+            # print(self.tensors[0].shape, self.tensors[1].shape)
             self.moveActive(i - 1, i)
             # error = self.checkCanonicalize()
             # print('canonical error = {}'.format(error))

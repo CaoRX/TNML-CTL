@@ -25,13 +25,13 @@ if __name__ == '__main__':
     # timeBeforeLoad = time.time()
     dataset = mnist.load(compressed = True, px = px, py = py, zzFlag = zzFlag)
     # print(dict(dataset))
-    # print(dataset)
+    # print([x.shape for x in dataset['testX'][:10]])
 
     # model = model.MPSModel(h = 14, w = 14)
-    mpsOptions = model.MPSModelOptions(n = n, m = 20, classes = 10, eta0 = 0.01, eta = 0.01)
+    mpsOptions = model.MPSModelOptions(n = n, m = 10, classes = 10, eta0 = 0.01, eta = 0.01)
     mpsModel = model.MPSModel(mpsOptions)
 
-    trainN = 300
+    trainN = 1000
     validN = 100
     trainX, trainY = dataset['trainX'][:trainN], dataset['trainY'][:trainN]
     validX, validY = dataset['testX'][:validN], dataset['testY'][:validN]
